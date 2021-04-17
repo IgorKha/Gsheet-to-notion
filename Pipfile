@@ -1,0 +1,52 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[scripts]
+dead-check = "vulture onixs"
+dist-check = "twine check dist/*"
+dist = "python -c 'import setuptools; setuptools.setup()' -- bdist_wheel"
+lint-check = "flakehell lint gsheet2notion.py"
+test = "pytest"
+type-check = "mypy gsheet2notion.py"
+
+[dev-packages]
+coverage = {extras = ["toml"], version = "*"}
+flake8-2020 = "*"
+flake8-bugbear = "*"
+flake8-builtins = "*"
+flake8-comprehensions = "*"
+flake8-eradicate = "*"
+flake8-isort = "*"
+flake8-mutable = "*"
+flake8-pep3101 = "*"
+flake8-pytest-style = "*"
+flake8-quotes = "*"
+flake8-return = "*"
+flake8-rst-docstrings = "*"
+flake8-simplify = "*"
+flake8-use-fstring = "*"
+flake8-variables-names = "*"
+flakehell = "*"
+gsheet2notion = {editable = true, path = ".", use_pep517 = false}
+hypothesis = "*"
+isort = ">= 5.4"
+mccabe = "*"
+mypy = "*"
+pycodestyle = "*"
+pylint = "*"
+pytest = ">= 6.0"
+pytest-cov = "*"
+pytest-matcher = "*"
+setuptools = "*"
+twine = "*"
+vulture = "*"
+
+[packages]
+click = "*"
+exitstatus = "*"
+gspread = "*"
+notion = "*"
+
+# kate: hl toml;
