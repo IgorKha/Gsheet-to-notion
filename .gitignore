@@ -1,0 +1,10 @@
+__pycache__/
+build/
+dist/
+*.egg-info/
+
+.coverage
+.hypothesis/
+Pipfile.lock
+*.kate-swp
+test/test-plugin/pyproject.toml
