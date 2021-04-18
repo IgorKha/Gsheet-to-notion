@@ -1,0 +1,5 @@
+setuptools>=54.1.2
+gspread>=3.7.0
+pandas>=1.2.4
+notion>=0.0.28
+click>=7.1.2
