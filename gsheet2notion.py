@@ -7,35 +7,33 @@
 #
 #
 
+# Standard imports
+import csv
+
 # Third party packages
 import click
-import gspread
 import pandas as pd
 from notion.client import NotionClient
-import secret
-import csv
+
+# Project specific imports
+from gsh import googlesheet
+from secret import db_file, gsheet_page, notion_key, notion_url, slack_channel
 from slack_msg import message
+
 
 @click.command()
 @click.help_option(
     '--help'
-  , '-h'
-  )
+    , '-h'
+)
 @click.version_option(message='%(version)s')
 def gsheet2notion():
-
-    client = NotionClient(token_v2=secret.notion_key)
-    notion_url = secret.notion_url
-    gc = gspread.service_account(filename='credentials.json')
-
-    # Reading google sheet
-    sh = gc.open_by_url(secret.gsheet_url)  # Open the file by url
-    worksheet = sh.worksheet('sheet')  # Select the sheet inside the file
+    client = NotionClient(token_v2=notion_key)
 
     # We collect the pandas DataFrame and rename the columns to names
     # that correspond to the names of the property in notion
     df = pd.DataFrame(
-        worksheet.get_all_records())
+        googlesheet(gsheet_page))
 
     df.columns = ['Date', 'Name', 'Email', 'OpenLand', 'Telegram', 'Team_to_help', 'Competence', 'Task', 'Profit',
                   'Why_we', 'work_hour', 'timezone', 'About_me', 'otkuda_uznal', 'CV', 'first_status',
@@ -51,11 +49,10 @@ def gsheet2notion():
     cv = client.get_collection_view(notion_url)
 
     # Read csv
-    with open('db.csv') as f:
-        a = [{k: str(v) for k, v in row.items()}
+    with open(db_file) as f:
+        db = [{k: str(v) for k, v in row.items()}
              for row in csv.DictReader(f, skipinitialspace=True)]
 
-    db = a
     time_check = []
     for i in db:
         time_check.append(i['Date'])
@@ -77,7 +74,7 @@ def gsheet2notion():
     # Append in csv file
     try:
         keys = result[0].keys()
-        with open('db.csv', 'a+', newline='') as output_file:
+        with open(db_file, 'a+', newline='') as output_file:
             dict_writer = csv.DictWriter(output_file, keys)
             # dict_writer.writeheader()
             dict_writer.writerows(result)
@@ -90,8 +87,8 @@ def gsheet2notion():
 
         # Send message in Slack
         msg = ', '.join(namelist)
-        message('#test', text=f"New volunteer CV: {msg}")
+        message(slack_channel, text=f"New volunteer CV: {msg}")
     except:
         pass
 
-print('Done')
+    print('Done')
