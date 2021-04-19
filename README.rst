@@ -13,3 +13,9 @@ Then you may enter the shell and perform your job::
     $ pytest
     ...
 
+After install - you need change the limit values in the source library Notion::
+
+    notion/client.py
+    notion/store.py
+    searching all value: "limit": 1000 or more and change to 100, not more
+
