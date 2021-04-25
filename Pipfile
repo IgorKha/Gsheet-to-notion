@@ -48,6 +48,5 @@ click = "*"
 exitstatus = "*"
 gspread = "*"
 notion = "*"
-pandas = "*"
 slack-sdk = "*"
 # kate: hl toml;

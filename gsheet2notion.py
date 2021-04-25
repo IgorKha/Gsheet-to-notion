@@ -8,13 +8,11 @@
 
 # Standard imports
 import csv
-from typing import Final, List
 
 # Third party packages
 import click
 import gspread
-import pandas as pd
-from notion.client import NotionClient
+from notion.client import NotionClient # TODO change to notion-py lib
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
@@ -30,48 +28,46 @@ from secret import (
 )
 
 # BEGIN Constants
-_COLUMNS: Final[List[str]] = [
-    'Date'
-  , 'Name'
-  , 'Email'
-  , 'OpenLand'
-  , 'Telegram'
-  , 'Team_to_help'
-  , 'Competence'
-  , 'Task'
-  , 'Profit'
-  , 'Why_we'
-  , 'work_hour'
-  , 'timezone'
-  , 'About_me'
-  , 'otkuda_uznal'
-  , 'CV'
-  , 'first_status'
-  , 'Interview'
-  , 'Result'
-  ]
+_NAMES_XLAT = {
+    'Timestamp': 'Date'
+    , 'Представься, пожалуйста (имя и фамилия) ': 'Name'
+    , 'Email address': 'Email'
+    , 'Как тебя найти в Месте (@... в Openland)': 'OpenLand'
+    , 'Оставь контакт в Telegram (или другом мессенджере)': 'Telegram'
+    , 'Какой команде ты сможешь помочь?': 'Team_to_help'
+    , 'Какие твои профессиональные компетенции?': 'Competence'
+    , 'Какие задачи тебе интересны в команде Mesto?': 'Task'
+    , 'Что ты хотел бы получить от волонтерского опыта в команде Места?': 'Profit'
+    , 'Расскажи нам более подробно о том, почему ты хочешь быть в наших рядах': 'Why_we'
+    , 'Каким временем ты располагаешь и готов уделять Месту (часы в неделю)? ': 'work_hour'
+    , 'В каком часовом поясе ты живешь?': 'timezone'
+    , 'Ну и самое главное: расскажи пару слов о себе)!': 'About_me'
+    , 'Откуда ты узнал о возможности попасть в команду Места?': 'otkuda_uznal'
+    , 'Прикрепи ссылку на свое резюме ': 'CV'
+    , 'Первичный статус ': 'first_status'
+    , 'Интервью: кратко ': 'Interview'
+    , 'Результат': 'Result'
+}
 # END Constants
 
 
 # BEGIN Globals
-# TODO Get rid of the globals!
-# class slackmessage:
-wclient = WebClient(token=slack_key)
+__wclient = WebClient(token=slack_key)
 # END Globals
 
 
 # BEGIN Internal functions
 def _read_google_sheet(sheet):
     """ Read google sheet. """
-    gc = gspread.service_account(filename='credentials.json')
-    sh = gc.open_by_url(gsheet_url)                         # Open the file by url
-    worksheet = sh.worksheet(sheet)                         # Select the sheet inside the file
+    g_secret = gspread.service_account(filename='credentials.json')
+    g_sheet = g_secret.open_by_url(gsheet_url)                         # Open the file by url
+    worksheet = g_sheet.worksheet(sheet)                         # Select the sheet inside the file
     return worksheet.get_all_records()
 
 
 def _send_message_to_slack(chat, text):
     try:
-        response = wclient.chat_postMessage(channel=chat, text=text)
+        response = __wclient.chat_postMessage(channel=chat, text=text)
         assert response['message']['text'] == text
 
     except SlackApiError as e:
@@ -92,25 +88,22 @@ def _send_message_to_slack(chat, text):
 def gsheet2notion():
     """Send updates from Mesto's Google Sheet to Notion."""
 
-    # We collect the pandas DataFrame and rename the columns to names
-    # that correspond to the names of the property in notion
-    df = pd.DataFrame(_read_google_sheet(gsheet_page))
+    worksheet = _read_google_sheet(gsheet_page)
 
-    df.columns = _COLUMNS
-
-    # Convert DataFrame to strings
-    df = df.astype(str)
-
-    # Convert into a list of dictionaries
-    df = pd.DataFrame.to_dict(df, orient='records')
+    source_data = []
+    for mapping in worksheet:
+        record = {}
+        for old_key, new_key in _NAMES_XLAT.items():
+            record[new_key] = mapping[old_key]
+        source_data.append(record)
 
     # Notion, Access a database using the URL of the database page or the inline block
     client = NotionClient(token_v2=notion_key)
-    cv = client.get_collection_view(notion_url)
+    notion_cli = client.get_collection_view(notion_url)
 
     # Read the CSV file
     with open(db_file) as f:
-        db = [
+        transformed = [
             {
                 k: str(v) for k, v in row.items()
             }
@@ -118,20 +111,20 @@ def gsheet2notion():
           ]
 
     time_check = []
-    for i in db:
+    for i in transformed:
         time_check.append(i['Date'])
 
-    # Compare the `DataFrame` with records from the file using the `Date`
+    # Compare the `source_data` with records from the file using the `Date`
     # key, write to the `result`, and add a new pair to the dictionary.
     result = []
-    for i in df:
+    for i in source_data:
         if i['Date'] not in time_check:
             result.append(i)
             i.update({'Status': 'Новая'})
 
     # Write to Notion from the `result`
     for mapping in result:
-        row = cv.collection.add_row()
+        row = notion_cli.collection.add_row()
         for key, value in mapping.items():
             setattr(row, key, value)
 
@@ -150,7 +143,7 @@ def gsheet2notion():
         msg = ', '.join(map(lambda item: item.get('Name'), result))
         _send_message_to_slack(
             slack_channel
-          , text=f'New volunteer CV: {msg}'
+          , text=f'New volunteer CV: *{msg}*'
           )
 
     except Exception:
