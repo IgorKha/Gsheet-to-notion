@@ -12,7 +12,7 @@ import csv
 # Third party packages
 import click
 import gspread
-from notion.client import NotionClient # TODO change to notion-py lib
+from notion.client import NotionClient                      # TODO change to notion-py lib
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
@@ -28,6 +28,9 @@ from secret import (
 )
 
 # BEGIN Constants
+# TODO Move to a configuration/resource file (e.g., YAML) to avoid hardcode
+# (especially w/ non English/ASCII symbols)
+# See also `setuptools` manual about resource files.
 _NAMES_XLAT = {
     'Timestamp': 'Date'
   , 'Представься, пожалуйста (имя и фамилия) ': 'Name'
@@ -122,7 +125,7 @@ def gsheet2notion():
     for i in source_data:
         if i['Date'] not in time_check:
             result.append(i)
-            i.update({'Status': 'Новая'})
+            i.update({'Status': 'Новая'})                   # TODO Move to config/resource file too
 
     # Write to Notion from the `result`
     for mapping in result:

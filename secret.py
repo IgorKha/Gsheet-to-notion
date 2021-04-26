@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# TODO Get rid of this file for the sake of CLI/config options/parameters
+
 gsheet_url = ''
 gsheet_page = ''
 
