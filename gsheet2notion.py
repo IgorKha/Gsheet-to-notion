@@ -12,7 +12,7 @@ import csv
 # Third party packages
 import click
 import gspread
-from notion.client import NotionClient # TODO change to notion-py lib
+from notion.client import NotionClient                      # TODO change to notion-py lib
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
@@ -28,30 +28,34 @@ from secret import (
 )
 
 # BEGIN Constants
+# TODO Move to a configuration/resource file (e.g., YAML) to avoid hardcode
+# (especially w/ non English/ASCII symbols)
+# See also `setuptools` manual about resource files.
 _NAMES_XLAT = {
     'Timestamp': 'Date'
-    , 'Представься, пожалуйста (имя и фамилия) ': 'Name'
-    , 'Email address': 'Email'
-    , 'Как тебя найти в Месте (@... в Openland)': 'OpenLand'
-    , 'Оставь контакт в Telegram (или другом мессенджере)': 'Telegram'
-    , 'Какой команде ты сможешь помочь?': 'Team_to_help'
-    , 'Какие твои профессиональные компетенции?': 'Competence'
-    , 'Какие задачи тебе интересны в команде Mesto?': 'Task'
-    , 'Что ты хотел бы получить от волонтерского опыта в команде Места?': 'Profit'
-    , 'Расскажи нам более подробно о том, почему ты хочешь быть в наших рядах': 'Why_we'
-    , 'Каким временем ты располагаешь и готов уделять Месту (часы в неделю)? ': 'work_hour'
-    , 'В каком часовом поясе ты живешь?': 'timezone'
-    , 'Ну и самое главное: расскажи пару слов о себе)!': 'About_me'
-    , 'Откуда ты узнал о возможности попасть в команду Места?': 'otkuda_uznal'
-    , 'Прикрепи ссылку на свое резюме ': 'CV'
-    , 'Первичный статус ': 'first_status'
-    , 'Интервью: кратко ': 'Interview'
-    , 'Результат': 'Result'
+  , 'Представься, пожалуйста (имя и фамилия) ': 'Name'
+  , 'Email address': 'Email'
+  , 'Как тебя найти в Месте (@... в Openland)': 'OpenLand'
+  , 'Оставь контакт в Telegram (или другом мессенджере)': 'Telegram'
+  , 'Какой команде ты сможешь помочь?': 'Team_to_help'
+  , 'Какие твои профессиональные компетенции?': 'Competence'
+  , 'Какие задачи тебе интересны в команде Mesto?': 'Task'
+  , 'Что ты хотел бы получить от волонтерского опыта в команде Места?': 'Profit'
+  , 'Расскажи нам более подробно о том, почему ты хочешь быть в наших рядах': 'Why_we'
+  , 'Каким временем ты располагаешь и готов уделять Месту (часы в неделю)? ': 'work_hour'
+  , 'В каком часовом поясе ты живешь?': 'timezone'
+  , 'Ну и самое главное: расскажи пару слов о себе)!': 'About_me'
+  , 'Откуда ты узнал о возможности попасть в команду Места?': 'otkuda_uznal'
+  , 'Прикрепи ссылку на свое резюме ': 'CV'
+  , 'Первичный статус ': 'first_status'
+  , 'Интервью: кратко ': 'Interview'
+  , 'Результат': 'Result'
 }
 # END Constants
 
 
 # BEGIN Globals
+# TODO Get rid of this!
 __wclient = WebClient(token=slack_key)
 # END Globals
 
@@ -60,8 +64,8 @@ __wclient = WebClient(token=slack_key)
 def _read_google_sheet(sheet):
     """ Read google sheet. """
     g_secret = gspread.service_account(filename='credentials.json')
-    g_sheet = g_secret.open_by_url(gsheet_url)                         # Open the file by url
-    worksheet = g_sheet.worksheet(sheet)                         # Select the sheet inside the file
+    g_sheet = g_secret.open_by_url(gsheet_url)              # Open the file by url
+    worksheet = g_sheet.worksheet(sheet)                    # Select the sheet inside the file
     return worksheet.get_all_records()
 
 
@@ -76,6 +80,7 @@ def _send_message_to_slack(chat, text):
         assert e.response['error']  # str like 'invalid_auth', 'channel_not_found'
         print(f'Got an error: {e.response["error"]}')
         # TODO Handle the exception properly!
+        # TODO Use `logger`
 # END Internal functions
 
 
@@ -120,7 +125,7 @@ def gsheet2notion():
     for i in source_data:
         if i['Date'] not in time_check:
             result.append(i)
-            i.update({'Status': 'Новая'})
+            i.update({'Status': 'Новая'})                   # TODO Move to config/resource file too
 
     # Write to Notion from the `result`
     for mapping in result:
